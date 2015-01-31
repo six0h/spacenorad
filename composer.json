@@ -1,5 +1,10 @@
 {
     "require": {
-        "rmccue/requests": "dev-master"
+        "swiftmailer/swiftmailer": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "SpaceNorad\\": "app/"
+        }
     }
 }
