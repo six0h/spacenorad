@@ -1,0 +1,13 @@
+{
+    "username": "",
+    "password": "",
+    "gameNumber": "",
+    "tmpDir": "",
+    "mailFrom": "",
+    "mailTo": "",
+    "smtpUser": "",
+    "smtpPass": "",
+    "smtpAddress": "",
+    "smtpPort": "",
+    "smtpEncryption": ""
+}
