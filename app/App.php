@@ -40,8 +40,6 @@ class App {
                 $this->enemies = $game->findEnemies($report->getFleets(), $report->getPlayerId());
                 $this->attackers = $game->findAttackers($this->enemies, $this->myStars, $report->getPlayerId());
 
-                var_dump($this->attackers);
-
                 $attackerRecon = new AttackerFileRepository();
 
                 if(count($this->attackers) > 0 && $this->sendAttackerEmail($this->attackers, $this->myStars, $this->config))
