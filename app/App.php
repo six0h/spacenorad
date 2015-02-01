@@ -4,6 +4,7 @@ use SpaceNorad\Config;
 use SpaceNorad\Request\NeptuneApi;
 use SpaceNorad\Request\CurlRequest;
 use SpaceNorad\Repository\GameRepository;
+use SpaceNorad\Repository\AttackerFileRepository;
 use SpaceNorad\Model\Game;
 use SpaceNorad\Model\Player;
 use SpaceNorad\Model\Report;
@@ -24,20 +25,24 @@ class App {
     }
 
     public function start() {
-        if($login = $this->api->login($this->config["username"], $this->config["password"])) {
+        if($this->api->login($this->config["username"], $this->config["password"])) {
             $player = Player::Parse($this->api->getPlayerInfo()[1]);
 
             $gameRepository = new GameRepository();
             $gameRepository->Parse($player->getGames());
 
             foreach($gameRepository->getGames() as $game) {
-                $order = $this->api->getGameReport($game->getNumber());
-                $report = Report::Parse($order['report']);
+                $response = $this->api->getGameReport($game->getNumber());
+                $report = Report::Parse($response['report']);
 
                 $game->setReport($report);
                 $this->myStars = $game->findMyStars($report->getStars(), $report->getPlayerId());
                 $this->enemies = $game->findEnemies($report->getFleets(), $report->getPlayerId());
                 $this->attackers = $game->findAttackers($this->enemies, $this->myStars, $report->getPlayerId());
+
+                var_dump($this->attackers);
+
+                $attackerRecon = new AttackerFileRepository();
 
                 if(count($this->attackers) > 0 && $this->sendAttackerEmail($this->attackers, $this->myStars, $this->config))
                     exit(0);
