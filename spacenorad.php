@@ -3,7 +3,7 @@
 
 require_once('vendor/autoload.php');
 
-define("BASEPATH", dirname(__FILE__));
+define("BASEPATH", __DIR__);
 
 use SpaceNorad\App;
 use SpaceNorad\Config;
