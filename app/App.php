@@ -8,6 +8,8 @@ use SpaceNorad\Repository\AttackerFileRepository;
 use SpaceNorad\Model\Game;
 use SpaceNorad\Model\Player;
 use SpaceNorad\Model\Report;
+use SpaceNorad\Service\Mail\Mailer;
+use SpaceNorad\Service\Mail\Message;
 
 class App {
 
@@ -34,17 +36,17 @@ class App {
             foreach($gameRepository->getGames() as $game) {
                 $response = $this->api->getGameReport($game->getNumber());
                 $report = Report::Parse($response['report']);
-
                 $game->setReport($report);
-                $this->myStars = $game->findMyStars($report->getStars(), $report->getPlayerId());
-                $this->enemies = $game->findEnemies($report->getFleets(), $report->getPlayerId());
-                $this->attackers = $game->findAttackers($this->enemies, $this->myStars, $report->getPlayerId());
 
-        //        $attackerRecon = new AttackerFileRepository($game);
-        //        $attackerRecon->findNewAttackers($this->attackers);
+                $myStars = $game->findMyStars($report->getStars(), $report->getPlayerId());
+                $enemies = $game->findEnemies($report->getFleets(), $report->getPlayerId());
+                $attackers = $game->findAttackers($enemies, $myStars, $report->getPlayerId());
 
-                if(count($this->attackers) > 0 && $this->sendAttackerEmail($this->attackers, $this->myStars, $this->config))
-                    exit(0);
+                $attackerRecon = new AttackerFileRepository($game);
+                $newAttackers = $attackerRecon->findNewAttackers($attackers);
+
+                if(!$this->sendAttackerEmail($newAttackers, $myStars, $this->config))
+                    exit("Could not send email");
             }
         } else {
             echo "Couldn't login";
@@ -53,41 +55,15 @@ class App {
 
     private function sendAttackerEmail($attackers, $stars, $config) {
         if(count($attackers) > 0) {
-            $text = $this->generateAttackerText($attackers, $stars);
-            $message = $this->createEmailMessage("You're being attacked", $text, $config);
-
-            $transport = $this->createSmtpTransportFromConfig($config);
-            $mailer = $this->createMailer($transport);
+            $attackerMessage = $this->generateAttackerText($attackers, $stars);
+            $message = Message::create("You're being attacked!", $attackerMessage, $config['mailFrom'], $config['mailTo']);
+            $mailer = new Mailer($config);
             $numSent = $mailer->send($message);
             if($numSent > 0)
                 return true;
 
             return false;
         }
-    }
-
-    private function createMailer($transport) {
-        return \Swift_Mailer::newInstance($transport);
-    }
-
-    private function createEmailMessage($subject, $body, $config) {
-        $message = \Swift_Message::newInstance("You're being attacked");
-        if(!isset($config['mailFrom']) || !isset($config['mailTo']))
-            exit("Please fill out your smtp config in config.json");
-
-        $message->setFrom($config['mailFrom'])
-            ->setTo($config['mailTo'])
-            ->setBody($body);
-
-        return $message;
-    }
-
-    private function createSmtpTransportFromConfig($config) {
-        $transport = \Swift_SmtpTransport::newInstance($config['smtpAddress'], $config['smtpPort'], $config['smtpEncryption'])
-            ->setUsername($config['smtpUser'])
-            ->setPassword($config['smtpPass']);
-
-        return $transport;
     }
 
     private function generateAttackerText($attackers, $stars) {
