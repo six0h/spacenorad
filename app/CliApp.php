@@ -29,10 +29,10 @@ class CliApp {
     }
 
     public function start() {
-        $controller = new ResearchController($this->loadTwig());
-        $controller->researchMonitorAction($this->api, $this->config);
-//        $controller = new AttackerController();
-//        $controller->attackerReportAction($this->api, $this->config);
+//        $controller = new ResearchController($this->loadTwig());
+//        $controller->researchMonitorAction($this->api, $this->config);
+        $controller = new AttackerController();
+        $controller->attackerReportAction($this->api, $this->config);
     }
 
     public function loadTwig() {

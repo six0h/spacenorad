@@ -29,7 +29,7 @@ class ResearchController {
                 $research['gameNumber'] = $game->get('number');
 
                 $playerStars = [];
-                foreach($report->stars as $star) {
+                foreach($report->getStars() as $star) {
                     $starPUID = $star['puid'];
                     if(isset($playerStars[$starPUID]))
                         $playerStars[$starPUID]++;
