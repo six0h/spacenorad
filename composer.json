@@ -1,6 +1,7 @@
 {
     "require": {
-        "swiftmailer/swiftmailer": "dev-master"
+        "swiftmailer/swiftmailer": "dev-master",
+        "twig/twig": "~1.0"
     },
     "autoload": {
         "psr-4": {

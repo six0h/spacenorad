@@ -12,7 +12,12 @@ class AttackerFileRepository {
         $this->cacheFiles = scandir($this->cacheDir);
     }
 
-    public function findNewAttackers($fleets) {
+    public function clearLandedAndFindNewAttackers($fleets) {
+        $this->clearLandedAttackers($fleets);
+        return $this->findNewAttackers($fleets);
+    }
+
+    private function findNewAttackers($fleets) {
         $gameNumber = $this->game->getNumber();
         $newAttackers = [];
         foreach($fleets as $fleet) {
@@ -25,17 +30,19 @@ class AttackerFileRepository {
         return $newAttackers;
     }
 
-    public function clearLandedAttackers($fleets) {
+    private function clearLandedAttackers($fleets) {
         $gameNumber = $this->game->getNumber();
         $fleetIds = [];
         foreach($fleets as $fleet) {
             $fleetIds[] = $fleet['uid'];
         }
 
-        foreach($cacheFiles as $file) {
+        foreach($this->cacheFiles as $file) {
             $pieces = explode('-', $file);
-            if(!in_array($pieces[2], $fleetIds)) {
-                unlink($this->cacheDir . '/' . $file);
+            if(isset($pieces[2])) {
+                if(!in_array($file, $fleetIds)) {
+                    unlink($this->cacheDir . '/' . $file);
+                }
             }
         }
     }

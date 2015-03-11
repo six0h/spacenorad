@@ -1,52 +1,34 @@
-<?php namespace SpaceNorad;
+<?php namespace SpaceNorad\Controller;
 
-use SpaceNorad\Config;
-use SpaceNorad\Request\NeptuneApi;
-use SpaceNorad\Request\CurlRequest;
-use SpaceNorad\Repository\GameRepository;
-use SpaceNorad\Repository\AttackerFileRepository;
-use SpaceNorad\Model\Game;
-use SpaceNorad\Model\Player;
-use SpaceNorad\Model\Report;
+use \SpaceNorad\Model\Player;
+use \SpaceNorad\Model\Report;
 use SpaceNorad\Service\Mail\Mailer;
 use SpaceNorad\Service\Mail\Message;
+use \SpaceNorad\Repository\GameRepository;
+use \SpaceNorad\Repository\AttackerFileRepository;
 
-class App {
+class AttackerController {
 
-    private $config, // Config
-            $request, // CurlRequest
-            $api, // NeptuneApi
-            $myStars,
-            $enemies,
-            $attackers;
-
-    function __construct(Config $config, CurlRequest $request, NeptuneApi $api) {
-        $this->config = $config;
-        $this->request = $request;
-        $this->api = $api;
-    }
-
-    public function start() {
-        if($this->api->login($this->config["username"], $this->config["password"])) {
-            $player = Player::Parse($this->api->getPlayerInfo()[1]);
+    public function attackerReportAction($api, $config) {
+        if($api->login($config["username"], $config["password"])) {
+            $player = Player::Parse($api->getPlayerInfo()[1]);
 
             $gameRepository = new GameRepository();
             $gameRepository->Parse($player->getGames());
 
             foreach($gameRepository->getGames() as $game) {
-                $response = $this->api->getGameReport($game->getNumber());
+                $response = $api->getGameReport($game->getNumber());
                 $report = Report::Parse($response['report']);
                 $game->setReport($report);
 
                 $myStars = $game->findMyStars($report->getStars(), $report->getPlayerId());
                 $enemies = $game->findEnemies($report->getFleets(), $report->getPlayerId());
-                $attackers = $game->findAttackers($enemies, $myStars, $report->getPlayerId());
+                $allAttackers = $game->findAttackers($enemies, $myStars, $report->getPlayerId());
 
                 $attackerRecon = new AttackerFileRepository($game);
-                $newAttackers = $attackerRecon->findNewAttackers($attackers);
+                $newAttackers = $attackerRecon->clearLandedAndFindNewAttackers($allAttackers);
 
-                if(!$this->sendAttackerEmail($newAttackers, $myStars, $this->config))
-                    exit("Could not send email");
+                $this->sendAttackerEmail($newAttackers, $myStars, $config);
             }
         } else {
             echo "Couldn't login";
